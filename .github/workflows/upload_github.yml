@@ -1,0 +1,50 @@
+on:
+  workflow_call:
+    inputs:
+      TAG:
+        required: true
+        type: string
+      RELEASE_NAME:
+        required: true
+        type: string
+  
+jobs:
+  upload_github:
+    name: Upload GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Download Windows x64 Artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: MelonLoader.Installer
+          path: ./compiled_release
+        
+      - name: Download Linux x64 Artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: MelonLoader.Installer.Linux
+          path: ./compiled_release
+        
+      - name: Download MacOS Artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: MelonLoader.Installer.MacOS
+          path: ./compiled_release/macos
+          
+      - name: Package MacOS into Zip Archive
+        run: |
+          cd compiled_release/macos
+          zip -r ../MelonLoader.Installer.MacOS.zip  ./
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE-NOTES.md
+          tag: ${{ inputs.TAG }}
+          release_name: ${{ inputs.RELEASE_NAME }}
+          files: |
+            compiled_release/MelonLoader.Installer.exe
+            compiled_release/MelonLoader.Installer.Linux
+            compiled_release/MelonLoader.Installer.MacOS.zip

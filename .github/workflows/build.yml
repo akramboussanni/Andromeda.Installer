@@ -1,0 +1,17 @@
+name: Build Installer
+
+run-name: 4.2.1${{ github.event_name != 'workflow_dispatch' && format('-ci.{0}', github.run_number) || '' }} | ${{ github.event_name != 'workflow_dispatch' && (github.event.head_commit.message || format('`[PR]` {0}', github.event.pull_request.title)) || 'Manual Build' }}
+
+on:
+  push:
+    branches: [ master, development ]
+  pull_request:
+    branches: [ master, development ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/compile_all.yml
+    with:
+      VERSION: "4.2.1${{ github.event_name != 'workflow_dispatch' && format('.{0}', github.run_number) || '' }}"

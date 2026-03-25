@@ -1,0 +1,50 @@
+on:
+  workflow_call:
+    inputs:
+      VERSION:
+        required: true
+        type: string
+
+jobs:
+  compile_macos:
+    name: Build MacOS App Bundle
+    runs-on: macos-latest
+    env:
+      PROJECT_PATH: ./Andromeda.Installer.csproj
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore Dependencies
+        run: dotnet restore "$PROJECT_PATH"
+
+      - name: Build Release for osx-x64
+        run: dotnet publish "$PROJECT_PATH" --no-restore -r osx-x64 -p:BuildNumber="${{ github.run_number }}" -p:Version="${{ inputs.VERSION }}"
+        
+      - name: Build Release for osx-arm64
+        run: dotnet publish "$PROJECT_PATH" --no-restore -r osx-arm64 -p:BuildNumber="${{ github.run_number }}" -p:Version="${{ inputs.VERSION }}"
+
+      - name: Create Universal Binary using lipo
+        run: |
+          mkdir -p "Output/osx-universal/MelonLoader Installer.app/Contents/MacOS"
+          lipo -create \
+            Output/osx-x64/MelonLoader.Installer.MacOS \
+            Output/osx-arm64/MelonLoader.Installer.MacOS \
+            -output "Output/osx-universal/MelonLoader Installer.app/Contents/MacOS/MelonLoader.Installer.MacOS"
+          cp Output/osx-arm64/libAvaloniaNative.dylib "Output/osx-universal/MelonLoader Installer.app/Contents/MacOS/"
+          cp Output/osx-arm64/libHarfBuzzSharp.dylib "Output/osx-universal/MelonLoader Installer.app/Contents/MacOS/"
+          cp Output/osx-arm64/libSkiaSharp.dylib "Output/osx-universal/MelonLoader Installer.app/Contents/MacOS/"
+        
+      - name: Copy App Bundle Resources
+        run: |
+          mkdir -p "Output/osx-universal/MelonLoader Installer.app/Contents/Resources"
+          cp Info.plist "Output/osx-universal/MelonLoader Installer.app/Contents/"
+          cp Resources/icon.icns "Output/osx-universal/MelonLoader Installer.app/Contents/Resources/"
+
+      - name: Upload Release
+        uses: actions/upload-artifact@v5
+        with:
+          name: MelonLoader.Installer.MacOS
+          path: Output/osx-universal

@@ -1,0 +1,23 @@
+name: Release Installer
+
+run-name: ${{ github.ref_name }} | Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/compile_all.yml
+    with:
+      VERSION: ${{ github.ref_name }}
+    
+  upload:
+    name: Upload
+    needs: build
+    uses: ./.github/workflows/upload_all.yml
+    with:
+      TAG: ${{ github.ref_name }}
+      RELEASE_NAME: $${{ github.ref_name }}
