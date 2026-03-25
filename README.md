@@ -1,6 +1,4 @@
-![Andromeda banner](Assets/ML_Text.png)
-
-# Andromeda Installer
+![Andromeda banner](Assets/banner.png)
 
 Andromeda Installer installs MelonLoader, installs Andromeda into the game Mods folder, and applies the loader configuration needed for a clean launch experience.
 
