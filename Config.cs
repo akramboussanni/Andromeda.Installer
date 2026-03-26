@@ -4,7 +4,7 @@ internal static class Config
 {
     public static Uri MelonWiki { get; private set; } = new("https://melonwiki.xyz");
     public static Uri Discord { get; private set; } = new("https://discord.gg/fMbrCUKHP8");
-    public static Uri Github { get; private set; } = new("https://github.com/LavaGang");
+    public static Uri Github { get; private set; } = new("https://github.com/akramboussanni/Andromeda");
     public static Uri Twitter { get; private set; } = new("https://x.com/lava_gang");
     public static string MelonLoaderReleasesApi { get; private set; } = "https://api.github.com/repos/LavaGang/MelonLoader/releases";
     public static string MelonLoaderBuildWorkflowApi { get; private set; } = "https://api.github.com/repos/LavaGang/MelonLoader/actions/workflows/5411546/runs?branch=alpha-development&event=push&status=success&per_page=5";

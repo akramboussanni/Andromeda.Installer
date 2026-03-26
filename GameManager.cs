@@ -86,6 +86,11 @@ internal static class GameManager
         Games.Remove(game);
     }
 
+    public static GameModel? FindPrimaryAndromedaGame()
+    {
+        return Games.FirstOrDefault(game => AndromedaManager.ShouldInstall(game.Dir));
+    }
+
     public static bool ValidateGame(ref string path, out string? exe, out string? exeExt, out string? errorMessage)
     {
         exe = null;

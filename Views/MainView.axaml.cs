@@ -12,6 +12,7 @@ namespace Andromeda.Installer.Views;
 public partial class MainView : UserControl
 {
     private static bool showedNotice;
+    private static bool autoOpenedTarget;
 
     public MainViewModel? Model => (MainViewModel?)DataContext;
 
@@ -40,6 +41,17 @@ public partial class MainView : UserControl
 
         OnGameListUpdate(null, null);
         GameManager.Games.CollectionChanged += OnGameListUpdate;
+
+        if (!autoOpenedTarget)
+        {
+            var andromedaTarget = GameManager.FindPrimaryAndromedaGame();
+            if (andromedaTarget != null)
+            {
+                autoOpenedTarget = true;
+                MainWindow.Instance.ShowDetailsView(andromedaTarget);
+                return;
+            }
+        }
 
         if (!showedNotice && Program.Version.Revision > 0)
         {

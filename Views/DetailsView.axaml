@@ -7,65 +7,103 @@
     x:Class="Andromeda.Installer.Views.DetailsView"
     x:DataType="vm:DetailsViewModel">
     <Grid RowDefinitions="Auto, *">
-        <Button Grid.Row="0" IsEnabled="{Binding !Installing}" Click="BackClickHandler"
+        <Button Grid.Row="0" IsEnabled="{Binding !Installing}" IsVisible="False" Click="BackClickHandler"
                 FontSize="20" Background="Transparent" Content="←" FontWeight="Bold" Foreground="Gray"
                 HorizontalContentAlignment="Center" />
         
-        <Grid Grid.Row="1" RowDefinitions="auto, *, 80, 60, auto, *, 80, auto, 2*, auto, auto, 30, 70, auto, auto, *" IsVisible="{Binding !LinuxInstructions}">
-        <Border Grid.Row="2" ClipToBounds="True" CornerRadius="20" HorizontalAlignment="Center">
-            <Image Source="{Binding Game.Icon}" />
-        </Border>
-        <TextBlock Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Center"
-            FontSize="22" Text="{Binding Game.Name}" />
-        <Grid Grid.Row="4" ColumnDefinitions="*, auto" IsEnabled="{Binding !Installing}">
-            <TextBox Grid.Column="0" Foreground="Gray" Text="{Binding Game.Dir}" IsReadOnly="True"
-                Focusable="False" SelectionBrush="#222" Background="Transparent" BorderThickness="0" />
-            <Button Click="OpenDirHandler" Grid.Column="1" Margin="3">📂</Button>
-        </Grid>
-        <Image Name="MelonIcon" Grid.Row="6" Source="/Assets/icon.ico" />
-        <TextBlock Grid.Row="7" HorizontalAlignment="Center" FontSize="18" Foreground="#7FFF"
-            Text="{Binding Game.MLStatusText}" />
-        <TextBlock Grid.Row="9" HorizontalAlignment="Center" Foreground="#BFFF">Select a version</TextBlock>
-        <ComboBox SelectionChanged="VersionSelectHandler" IsEnabled="{Binding EnableSettings}"
-            Name="VersionCombobox" Grid.Row="10" Margin="5" HorizontalAlignment="Center"
-            SelectedIndex="0" MaxDropDownHeight="150" />
-        <TextBlock Grid.Row="11" Tapped="SelectZipHandler" HorizontalAlignment="Center" IsEnabled="{Binding EnableSettings}"
-            Foreground="Gray" TextDecorations="Underline" FontSize="13" Cursor="Hand">Or select a
-            zipped version</TextBlock>
-        <StackPanel Grid.Row="12" IsEnabled="{Binding !Installing}">
-            <CheckBox Name="NightlyCheck" IsEnabled="{Binding EnableSettings}"
-                ToolTip.Tip="Enables bleeding-edge builds. ONLY ENABLE IF YOU KNOW WHAT YOU'RE DOING!"
-                Click="NightlyToggleHandler" HorizontalAlignment="Center">Enable Nightly builds</CheckBox>
-            <CheckBox Name="KeepFilesCheck"
-                ToolTip.Tip="Keep mods, plugins, UserData, and UserLibs when uninstalling."
-                HorizontalAlignment="Center"
-                IsVisible="{Binding Game.MLInstalled}" IsChecked="True">Keep mods and settings</CheckBox>
-        </StackPanel>
-        <Grid Grid.Row="13" Margin="10" Width="300" HorizontalAlignment="Center">
-            <Grid IsVisible="{Binding !Installing}" ColumnDefinitions="*, auto">
-                <Button Click="InstallHandler" IsEnabled="{Binding !Offline}" Name="InstallButton" Grid.Column="0"
-                    HorizontalAlignment="Stretch" Background="#383" Height="40"
-                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                    FontSize="18">Install</Button>
-                <Button Click="UninstallHandler" Margin="10 0 0 0" Grid.Column="1"
-                    IsVisible="{Binding Game.MLInstalled}" HorizontalAlignment="Stretch"
-                    Background="#833" Height="40" HorizontalContentAlignment="Center"
-                    VerticalContentAlignment="Center" FontSize="18">Uninstall</Button>
+        <Grid Grid.Row="1" RowDefinitions="auto, auto, auto, *" IsVisible="{Binding !LinuxInstructions}">
+            <Border Grid.Row="0" ClipToBounds="True" CornerRadius="14" HorizontalAlignment="Center" Margin="0 8 0 0" Width="112" Height="112">
+                <Image Source="{Binding Game.Icon}" Stretch="UniformToFill" Width="112" Height="112" />
+            </Border>
+            <TextBlock Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 8 0 0"
+                FontSize="22" Text="{Binding Game.Name}" />
+            <Grid Grid.Row="2" ColumnDefinitions="*, auto" Margin="0 8 0 0" IsEnabled="{Binding !Installing}">
+                <TextBox Grid.Column="0" Foreground="Gray" Text="{Binding Game.Dir}" IsReadOnly="True"
+                    Focusable="False" SelectionBrush="#222" Background="Transparent" BorderThickness="0" />
+                <Button Click="OpenDirHandler" Grid.Column="1" Margin="3">📂</Button>
             </Grid>
-            <Grid IsVisible="{Binding Installing}">
-                <ProgressBar Name="Progress" Height="40" Background="#4383" Foreground="#383" />
-                <TextBlock Name="InstallStatus" HorizontalAlignment="Center"
-                    VerticalAlignment="Center" Opacity="0.7" FontSize="14" />
-            </Grid>
+
+            <TabControl Grid.Row="3" Margin="0 10 0 0">
+                <TabItem Header="Manage Andromeda">
+                    <StackPanel Spacing="8" Margin="6">
+                        <Image Name="MelonIcon" HorizontalAlignment="Center" Source="/Assets/icon.ico" Width="72" Height="72" />
+                        <StackPanel HorizontalAlignment="Center" Spacing="3">
+                            <TextBlock HorizontalAlignment="Center" Foreground="#AFFF" FontSize="13"
+                                IsVisible="{Binding SupportsAndromeda}">
+                                <Run Text="Andromeda Version: " />
+                                <Run Text="{Binding AndromedaStatusText}" />
+                            </TextBlock>
+                        </StackPanel>
+
+                        <Grid Margin="10" Width="320" HorizontalAlignment="Center">
+                            <Grid IsVisible="{Binding !Installing}" ColumnDefinitions="*, auto">
+                                <Button Click="InstallAndromedaHandler" IsEnabled="{Binding !Offline}" Name="AndromedaInstallButton" Grid.Column="0"
+                                    HorizontalAlignment="Stretch" Background="#383" Height="40"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                    FontSize="18">Install Andromeda</Button>
+                                <Button Click="UninstallAndromedaHandler" Margin="10 0 0 0" Grid.Column="1"
+                                    IsVisible="{Binding AndromedaInstalled}" HorizontalAlignment="Stretch"
+                                    Background="#833" Height="40" HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center" FontSize="18">Uninstall</Button>
+                            </Grid>
+                            <Grid IsVisible="{Binding Installing}">
+                                <ProgressBar Name="Progress" Height="40" Background="#4383" Foreground="#383" />
+                                <TextBlock Name="InstallStatus" HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" Opacity="0.7" FontSize="14" />
+                            </Grid>
+                        </Grid>
+
+                        <TextBlock Name="ShowLinuxInstructions" IsEnabled="{Binding !Installing}" Tapped="ShowLinuxInstructionsHandler" HorizontalAlignment="Center" Foreground="Gray" TextDecorations="Underline" FontSize="13" Cursor="Hand" IsVisible="False">
+                            How do I start MelonLoader?
+                        </TextBlock>
+                        <TextBlock Name="ShowMacOSInstructions" IsEnabled="{Binding !Installing}" Tapped="ShowMacOSInstructionsHandler" HorizontalAlignment="Center" Foreground="Gray" TextDecorations="Underline" FontSize="13" Cursor="Hand" IsVisible="False">
+                            How do I start MelonLoader?
+                        </TextBlock>
+                    </StackPanel>
+                </TabItem>
+
+                <TabItem Header="Options">
+                    <StackPanel Margin="12" Spacing="10">
+                        <TextBlock HorizontalAlignment="Center" FontSize="16" Foreground="#7FFF">
+                            <Run Text="Modloader Version: " />
+                            <Run Text="{Binding Game.MLStatusText}" />
+                        </TextBlock>
+                        <TextBlock HorizontalAlignment="Center" Foreground="#BFFF">Select a modloader version</TextBlock>
+                        <ComboBox SelectionChanged="VersionSelectHandler" IsEnabled="{Binding EnableSettings}"
+                            Name="VersionCombobox" Margin="5" HorizontalAlignment="Center"
+                            SelectedIndex="0" MaxDropDownHeight="150" />
+                        <Grid Width="320" HorizontalAlignment="Center" ColumnDefinitions="*, auto">
+                            <Button Click="InstallModloaderHandler" IsEnabled="{Binding !Offline}" Name="InstallButton" Grid.Column="0"
+                                HorizontalAlignment="Stretch" Background="#3B6588" Height="38"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                FontSize="16">Install Modloader</Button>
+                            <Button Click="UninstallModloaderHandler" Margin="10 0 0 0" Grid.Column="1"
+                                IsVisible="{Binding Game.MLInstalled}" HorizontalAlignment="Stretch"
+                                Background="#7A3E3E" Height="38" HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center" FontSize="16">Uninstall</Button>
+                        </Grid>
+                        <CheckBox Name="KeepFilesCheck"
+                            ToolTip.Tip="Keep mods, plugins, UserData, and UserLibs when uninstalling."
+                            HorizontalAlignment="Center"
+                            IsVisible="{Binding Game.MLInstalled}" IsChecked="True">Keep mods and settings</CheckBox>
+                        <TextBlock Foreground="#DFFF" TextWrapping="Wrap">
+                            MelonLoader runtime settings for this game installation.
+                        </TextBlock>
+                        <CheckBox IsChecked="{Binding MelonConsoleEnabled}" IsEnabled="{Binding EnableSettings}">
+                            Enable MelonLoader console
+                        </CheckBox>
+                        <CheckBox IsChecked="{Binding HideConsoleWindow}" IsEnabled="{Binding EnableSettings}">
+                            Hide console window
+                        </CheckBox>
+                        <Button HorizontalAlignment="Left" Width="150" Click="SaveOptionsHandler" IsEnabled="{Binding EnableSettings}">
+                            Save Options
+                        </Button>
+                        <TextBlock Foreground="#AFFF" Text="{Binding OptionsStatusText}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
         </Grid>
-        
-        <TextBlock Name="ShowLinuxInstructions" IsEnabled="{Binding !Installing}" Grid.Row="14" Tapped="ShowLinuxInstructionsHandler" HorizontalAlignment="Center" Foreground="Gray" TextDecorations="Underline" FontSize="13" Cursor="Hand" IsVisible="False">
-            How do I start MelonLoader?
-        </TextBlock>
-		<TextBlock Name="ShowMacOSInstructions" IsEnabled="{Binding !Installing}" Grid.Row="14" Tapped="ShowMacOSInstructionsHandler" HorizontalAlignment="Center" Foreground="Gray" TextDecorations="Underline" FontSize="13" Cursor="Hand" IsVisible="False">
-			How do I start MelonLoader?
-		</TextBlock>
-    </Grid>
+
         <Grid Grid.Row="1" Margin="30" RowDefinitions="auto, *" IsVisible="{Binding LinuxInstructions}">
             <TextBlock Grid.Row="0" FontSize="25" Margin="0 0 0 20">Linux Launch Instructions</TextBlock>
                     <StackPanel Orientation="Vertical" IsVisible="{Binding !Game.IsLinux}" Grid.Row="1">

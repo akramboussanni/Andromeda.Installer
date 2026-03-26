@@ -106,7 +106,7 @@ internal static class Program
 #elif LINUX
             Process.Start("pkexec", [Config.ProcessPath!, "-wait", Environment.ProcessId.ToString()]);
 #elif OSX
-            Process.Start("osascript", ["-e", "do shell script \"open '{Config.ProcessPath!}' --args -wait {Environment.ProcessId.ToString()}\" with prompt \"MelonLoader Installer\" with administrator privileges"]);
+            Process.Start("osascript", ["-e", "do shell script \"open '{Config.ProcessPath!}' --args -wait {Environment.ProcessId.ToString()}\" with prompt \"Andromeda Installer\" with administrator privileges"]);
 #endif
         }
         catch
