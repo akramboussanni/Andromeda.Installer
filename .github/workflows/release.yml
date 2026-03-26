@@ -20,4 +20,4 @@ jobs:
     uses: ./.github/workflows/upload_all.yml
     with:
       TAG: ${{ github.ref_name }}
-      RELEASE_NAME: $${{ github.ref_name }}
+      RELEASE_NAME: ${{ github.ref_name }}
