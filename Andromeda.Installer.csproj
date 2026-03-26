@@ -7,7 +7,7 @@
         <LangVersion>latest</LangVersion>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
-        <PublishDir>$(SolutionDir)/Output/$(RuntimeIdentifier)</PublishDir>
+        <PublishDir>$(MSBuildProjectDirectory)/Output/$(RuntimeIdentifier)/</PublishDir>
         <PublishSingleFile>true</PublishSingleFile>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <DebugType>embedded</DebugType>
