@@ -26,18 +26,7 @@ jobs:
         with:
           name: MelonLoader.Installer.Linux
           path: ./compiled_release
-        
-      - name: Download MacOS Artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: MelonLoader.Installer.MacOS
-          path: ./compiled_release/macos
-          
-      - name: Package MacOS into Zip Archive
-        run: |
-          cd compiled_release/macos
-          zip -r ../MelonLoader.Installer.MacOS.zip  ./
-          
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -47,4 +36,3 @@ jobs:
           files: |
             compiled_release/MelonLoader.Installer.exe
             compiled_release/MelonLoader.Installer.Linux
-            compiled_release/MelonLoader.Installer.MacOS.zip
