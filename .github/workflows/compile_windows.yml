@@ -21,7 +21,7 @@ jobs:
         run: dotnet restore "$PROJECT_PATH"
 
       - name: Build Release for win-x64
-        run: dotnet publish "$PROJECT_PATH" --no-restore -r win-x64 -p:BuildNumber="${{ github.run_number }}" -p:Version="${{ inputs.VERSION }}"
+        run: dotnet publish "$PROJECT_PATH" -r win-x64 -p:BuildNumber="${{ github.run_number }}" -p:Version="${{ inputs.VERSION }}"
 
       - name: Upload Release for win-x64
         uses: actions/upload-artifact@v5

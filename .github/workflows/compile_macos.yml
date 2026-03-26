@@ -21,10 +21,10 @@ jobs:
         run: dotnet restore "$PROJECT_PATH"
 
       - name: Build Release for osx-x64
-        run: dotnet publish "$PROJECT_PATH" --no-restore -r osx-x64 -p:BuildNumber="${{ github.run_number }}" -p:Version="${{ inputs.VERSION }}"
+        run: dotnet publish "$PROJECT_PATH" -r osx-x64 -p:BuildNumber="${{ github.run_number }}" -p:Version="${{ inputs.VERSION }}"
         
       - name: Build Release for osx-arm64
-        run: dotnet publish "$PROJECT_PATH" --no-restore -r osx-arm64 -p:BuildNumber="${{ github.run_number }}" -p:Version="${{ inputs.VERSION }}"
+        run: dotnet publish "$PROJECT_PATH" -r osx-arm64 -p:BuildNumber="${{ github.run_number }}" -p:Version="${{ inputs.VERSION }}"
 
       - name: Create Universal Binary using lipo
         run: |
