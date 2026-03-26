@@ -17,9 +17,3 @@ jobs:
     uses: ./.github/workflows/compile_linux.yml
     with:
       VERSION: ${{ inputs.VERSION }}
-      
-  compile_macos:
-    name: MacOS
-    uses: ./.github/workflows/compile_macos.yml
-    with:
-      VERSION: ${{ inputs.VERSION }}
