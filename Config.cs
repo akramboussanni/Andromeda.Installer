@@ -1,4 +1,4 @@
-﻿namespace Andromeda.Installer;
+namespace Andromeda.Installer;
 
 internal static class Config
 {
@@ -9,9 +9,15 @@ internal static class Config
     public static string MelonLoaderReleasesApi { get; private set; } = "https://api.github.com/repos/LavaGang/MelonLoader/releases";
     public static string MelonLoaderBuildWorkflowApi { get; private set; } = "https://api.github.com/repos/LavaGang/MelonLoader/actions/workflows/5411546/runs?branch=alpha-development&event=push&status=success&per_page=5";
     public static string InstallerLatestReleaseApi { get; private set; } = "https://api.github.com/repos/LavaGang/Andromeda.Installer/releases/latest";
-    public static string AndromedaReleaseLatestApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda.Mod/releases/latest";
+    public static string AndromedaReleaseLatestApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda/releases/latest";
+    public static string AndromedaReleasesApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda/releases";
+    public static string AndromedaModReleaseLatestApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda.Mod/releases/latest";
+    public static string AndromedaModReleasesApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda.Mod/releases";
     public static string AndromedaAssetPattern { get; private set; } = "(?i)^Andromeda\\.Mod.*\\.(zip|dll)$";
-    public static string CacheDir { get; private set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MelonLoader Installer");
+    public static string AndromedaSettingsPath { get; private set; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Andromeda Installer", "andromeda_settings.json");
+    public static string CacheDir { get; private set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Andromeda Installer");
     public static string LocalZipCache { get; private set; } = Path.Combine(CacheDir, "Local Build");
     public static string GameListPath { get; private set; } = Path.Combine(CacheDir, "games.txt");
 

@@ -1,4 +1,4 @@
-﻿namespace Andromeda.Installer.ViewModels;
+namespace Andromeda.Installer.ViewModels;
 
 public class DetailsViewModel(GameModel game) : ViewModelBase
 {
@@ -12,6 +12,9 @@ public class DetailsViewModel(GameModel game) : ViewModelBase
     private string _optionsStatusText = string.Empty;
     private bool _andromedaInstalled;
     private bool _andromedaUpdateAvailable;
+    private bool _bleedingEdgeEnabled = AndromedaManager.BleedingEdgeEnabled;
+    private AndromedaVersion? _selectedAndromedaVersion;
+    private bool _andromedaVersionsLoaded;
 
     public GameModel Game => game;
 
@@ -115,6 +118,37 @@ public class DetailsViewModel(GameModel game) : ViewModelBase
         set
         {
             _andromedaUpdateAvailable = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool BleedingEdgeEnabled
+    {
+        get => _bleedingEdgeEnabled;
+        set
+        {
+            _bleedingEdgeEnabled = value;
+            AndromedaManager.BleedingEdgeEnabled = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public AndromedaVersion? SelectedAndromedaVersion
+    {
+        get => _selectedAndromedaVersion;
+        set
+        {
+            _selectedAndromedaVersion = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool AndromedaVersionsLoaded
+    {
+        get => _andromedaVersionsLoaded;
+        set
+        {
+            _andromedaVersionsLoaded = value;
             OnPropertyChanged();
         }
     }

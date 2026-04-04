@@ -35,6 +35,27 @@
                             </TextBlock>
                         </StackPanel>
 
+                        <!-- Andromeda version picker (mirrors the ML version picker in Options) -->
+                        <StackPanel IsVisible="{Binding SupportsAndromeda}" Spacing="4" HorizontalAlignment="Center">
+                            <TextBlock HorizontalAlignment="Center" Foreground="#BFFF" FontSize="12">Select Andromeda version</TextBlock>
+                            <ComboBox Name="AndromedaVersionCombobox"
+                                      IsEnabled="{Binding EnableSettings}"
+                                      HorizontalAlignment="Center"
+                                      SelectedIndex="0"
+                                      MaxDropDownHeight="150"
+                                      MinWidth="260"
+                                      SelectionChanged="AndromedaVersionSelectHandler" />
+                            <CheckBox Name="BleedingEdgeCheck"
+                                      IsChecked="{Binding BleedingEdgeEnabled}"
+                                      IsEnabled="{Binding EnableSettings}"
+                                      HorizontalAlignment="Center"
+                                      ToolTip.Tip="Pulls releases from github.com/akramboussanni/andromeda.mod instead of the stable repo."
+                                      Checked="BleedingEdgeChangedHandler"
+                                      Unchecked="BleedingEdgeChangedHandler">
+                                Enable Bleeding Edge releases
+                            </CheckBox>
+                        </StackPanel>
+
                         <Grid Margin="10" Width="320" HorizontalAlignment="Center">
                             <Grid IsVisible="{Binding !Installing}" ColumnDefinitions="*, auto">
                                 <Button Click="InstallAndromedaHandler" IsEnabled="{Binding !Offline}" Name="AndromedaInstallButton" Grid.Column="0"
@@ -61,6 +82,7 @@
                         </TextBlock>
                     </StackPanel>
                 </TabItem>
+
 
                 <TabItem Header="Options">
                     <StackPanel Margin="12" Spacing="10">
