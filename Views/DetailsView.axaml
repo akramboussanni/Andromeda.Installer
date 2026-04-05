@@ -111,11 +111,11 @@
                         <TextBlock Foreground="#DFFF" TextWrapping="Wrap">
                             MelonLoader runtime settings for this game installation.
                         </TextBlock>
-                        <CheckBox IsChecked="{Binding MelonConsoleEnabled}" IsEnabled="{Binding EnableSettings}">
-                            Enable MelonLoader console
+                        <CheckBox IsChecked="{Binding AndromedaEnabled}" IsEnabled="{Binding EnableSettings}">
+                            Enable Andromeda
                         </CheckBox>
-                        <CheckBox IsChecked="{Binding HideConsoleWindow}" IsEnabled="{Binding EnableSettings}">
-                            Hide console window
+                        <CheckBox IsChecked="{Binding ShowConsoleWindow}" IsEnabled="{Binding EnableSettings}">
+                            Show console window
                         </CheckBox>
                         <Button HorizontalAlignment="Left" Width="150" Click="SaveOptionsHandler" IsEnabled="{Binding EnableSettings}">
                             Save Options

@@ -7,8 +7,8 @@ public class DetailsViewModel(GameModel game) : ViewModelBase
     private bool _linuxInstructions;
     private bool _macOSInstructions;
     private string _andromedaStatusText = "Checking Andromeda version...";
-    private bool _melonConsoleEnabled;
-    private bool _hideConsoleWindow = true;
+    private bool _andromedaEnabled = true;
+    private bool _showConsoleWindow = false;
     private string _optionsStatusText = string.Empty;
     private bool _andromedaInstalled;
     private bool _andromedaUpdateAvailable;
@@ -72,22 +72,22 @@ public class DetailsViewModel(GameModel game) : ViewModelBase
         }
     }
 
-    public bool MelonConsoleEnabled
+    public bool AndromedaEnabled
     {
-        get => _melonConsoleEnabled;
+        get => _andromedaEnabled;
         set
         {
-            _melonConsoleEnabled = value;
+            _andromedaEnabled = value;
             OnPropertyChanged();
         }
     }
 
-    public bool HideConsoleWindow
+    public bool ShowConsoleWindow
     {
-        get => _hideConsoleWindow;
+        get => _showConsoleWindow;
         set
         {
-            _hideConsoleWindow = value;
+            _showConsoleWindow = value;
             OnPropertyChanged();
         }
     }
@@ -139,6 +139,17 @@ public class DetailsViewModel(GameModel game) : ViewModelBase
         set
         {
             _selectedAndromedaVersion = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Semver.SemVersion? _installedAndromedaVersion;
+    public Semver.SemVersion? InstalledAndromedaVersion
+    {
+        get => _installedAndromedaVersion;
+        set
+        {
+            _installedAndromedaVersion = value;
             OnPropertyChanged();
         }
     }

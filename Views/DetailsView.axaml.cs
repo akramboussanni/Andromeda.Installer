@@ -97,7 +97,9 @@ public partial class DetailsView : UserControl
         if (Model == null) return;
 
         var versions = AndromedaManager.Versions;
-        AndromedaVersionCombobox.ItemsSource = versions;
+        // Avalonia won't redraw if we pass the same List reference. We pass a new array to force the UI to update.
+        AndromedaVersionCombobox.ItemsSource = versions.ToArray();
+        
         if (versions.Count > 0)
         {
             AndromedaVersionCombobox.SelectedIndex = 0;
@@ -120,6 +122,7 @@ public partial class DetailsView : UserControl
             var andromedaVersionInfo = await AndromedaManager.GetVersionInfoAsync(Model.Game.Dir);
             Model.AndromedaStatusText = NormalizeAndromedaStatusText(andromedaVersionInfo.StatusText);
             Model.AndromedaInstalled = andromedaVersionInfo.InstalledVersion != null;
+            Model.InstalledAndromedaVersion = andromedaVersionInfo.InstalledVersion;
             Model.AndromedaUpdateAvailable = andromedaVersionInfo.InstalledVersion != null
                 && andromedaVersionInfo.LatestVersion != null
                 && andromedaVersionInfo.InstalledVersion.ComparePrecedenceTo(andromedaVersionInfo.LatestVersion) < 0;
@@ -129,6 +132,7 @@ public partial class DetailsView : UserControl
         {
             Model.AndromedaStatusText = "Failed to check version";
             Model.AndromedaInstalled = false;
+            Model.InstalledAndromedaVersion = null;
             Model.AndromedaUpdateAvailable = false;
         }
     }
@@ -148,20 +152,20 @@ public partial class DetailsView : UserControl
             return;
 
         var options = AndromedaManager.GetMelonLoaderOptions(Model.Game.Dir);
-        Model.MelonConsoleEnabled = options.ConsoleEnabled;
-        Model.HideConsoleWindow = options.HideConsole;
+        Model.AndromedaEnabled = options.Enabled;
+        Model.ShowConsoleWindow = options.ShowConsole;
         Model.OptionsStatusText = "Loaded current MelonLoader settings.";
     }
 
-    private void SaveOptionsHandler(object sender, RoutedEventArgs args)
+    private void SaveOptionsHandler(object? sender, RoutedEventArgs? args)
     {
         if (Model == null)
             return;
 
         var error = AndromedaManager.SaveMelonLoaderOptions(Model.Game.Dir, new MelonLoaderOptions
         {
-            ConsoleEnabled = Model.MelonConsoleEnabled,
-            HideConsole = Model.HideConsoleWindow
+            Enabled = Model.AndromedaEnabled,
+            ShowConsole = Model.ShowConsoleWindow
         });
 
         if (error != null)
@@ -234,14 +238,22 @@ public partial class DetailsView : UserControl
     {
         if (Model == null) return;
         Model.SelectedAndromedaVersion = AndromedaVersionCombobox.SelectedItem as AndromedaVersion;
+        UpdateAndromedaButtonLabel();
     }
 
     private async void BleedingEdgeChangedHandler(object? sender, Avalonia.Interactivity.RoutedEventArgs args)
     {
         if (Model == null) return;
-        // BleedingEdgeEnabled is already updated via binding.
-        // Re-fetch the version list with the new setting.
+        
+        // Avalonia bindings evaluate AFTER the Checked/Unchecked events by default.
+        // Force the model safely into sync before hitting the GitHub API.
+        if (BleedingEdgeCheck.IsChecked.HasValue)
+        {
+            Model.BleedingEdgeEnabled = BleedingEdgeCheck.IsChecked.Value;
+        }
+
         await InitAndromedaVersionsAsync();
+        await RefreshAndromedaStatusAsync();
     }
 
     public void UpdateVersionInfo()
@@ -256,15 +268,23 @@ public partial class DetailsView : UserControl
 
     private void UpdateAndromedaButtonLabel()
     {
-        if (Model == null)
+        if (Model == null || AndromedaVersionCombobox.SelectedItem == null)
             return;
 
-        if (!Model.AndromedaInstalled)
+        if (Model.InstalledAndromedaVersion == null)
+        {
             AndromedaInstallButton.Content = "Install Andromeda";
-        else if (Model.AndromedaUpdateAvailable)
-            AndromedaInstallButton.Content = "Update Andromeda";
-        else
-            AndromedaInstallButton.Content = "Reinstall Andromeda";
+            return;
+        }
+
+        var selectedVersion = (AndromedaVersion)AndromedaVersionCombobox.SelectedItem;
+        var comp = selectedVersion.Version.ComparePrecedenceTo(Model.InstalledAndromedaVersion);
+        AndromedaInstallButton.Content = comp switch
+        {
+            < 0 => "Downgrade Andromeda",
+            0 => "Reinstall Andromeda",
+            > 0 => "Update Andromeda"
+        };
     }
 
     private void UpdateModloaderButtonLabel()
@@ -310,14 +330,21 @@ public partial class DetailsView : UserControl
 
         var selectedAndromedaVersion = Model.SelectedAndromedaVersion;
 
-        // Andromeda depends on MelonLoader, so this path always refreshes MelonLoader first.
-        // After ML is installed, we install the specific Andromeda version inside MLManager.
         if (selectedAndromedaVersion != null)
         {
-            // Install ML then the specific Andromeda version.
+            // If they are installing the exact same version of Andromeda (a repair), we also reinstall ML.
+            // If they are just upgrading/downgrading Andromeda, we skip ML installation.
+            bool andromedaVersionDifferent = true;
+            if (Model.InstalledAndromedaVersion != null)
+            {
+                andromedaVersionDifferent = selectedAndromedaVersion.Version.ComparePrecedenceTo(Model.InstalledAndromedaVersion) != 0;
+            }
+
+            bool skipMlInstall = Model.Game.MLInstalled && andromedaVersionDifferent;
+
             _ = InstallMLThenAndromedaAsync(Model.Game.Dir,
                 Model.Game.MLInstalled && !KeepFilesCheck.IsChecked!.Value,
-                selectedVersion, Model.Game.Arch, selectedAndromedaVersion);
+                selectedVersion, Model.Game.Arch, selectedAndromedaVersion, skipMlInstall);
         }
         else
         {
@@ -330,25 +357,23 @@ public partial class DetailsView : UserControl
     }
 
     private async Task InstallMLThenAndromedaAsync(
-        string gameDir, bool removeUserFiles, MLVersion mlVersion, Architecture arch, AndromedaVersion andromedaVersion)
+        string gameDir, bool removeUserFiles, MLVersion mlVersion, Architecture arch, AndromedaVersion andromedaVersion, bool mlAlreadyInstalled)
     {
-        // Phase 1: Install MelonLoader (without Andromeda auto-install via MLManager)
         string? mlError = null;
-        await Task.Run(async () =>
-        {
-            // We wrap MLManager.InstallAsync but suppress its internal Andromeda install
-            // by temporarily using a gameDir without the target exe — not ideal.
-            // Instead, call ML install phases directly via the existing path.
-            // Since MLManager.InstallAsync calls AndromedaManager.ShouldInstall internally,
-            // it will attempt to install Andromeda. We override by re-installing immediately after.
-            bool done = false;
-            await MLManager.InstallAsync(gameDir, removeUserFiles, mlVersion, arch,
-                (progress, status) => Dispatcher.UIThread.Post(() => OnInstallProgress(progress * 0.5, status)),
-                (err) => { mlError = err; done = true; });
 
-            // Wait for callback
-            while (!done) await Task.Delay(50);
-        });
+        if (!mlAlreadyInstalled)
+        {
+            // Phase 1: Install MelonLoader if missing
+            await Task.Run(async () =>
+            {
+                bool done = false;
+                await MLManager.InstallAsync(gameDir, removeUserFiles, mlVersion, arch,
+                    (progress, status) => Dispatcher.UIThread.Post(() => OnInstallProgress(progress * 0.5, status)),
+                    (err) => { mlError = err; done = true; });
+
+                while (!done) await Task.Delay(50);
+            });
+        }
 
         if (mlError != null)
         {
@@ -357,11 +382,14 @@ public partial class DetailsView : UserControl
         }
 
         // Phase 2: Install the specific Andromeda version.
-        Dispatcher.UIThread.Post(() => OnInstallProgress(0.5, $"Installing Andromeda {andromedaVersion}"));
-        string? andromedaError = await AndromedaManager.InstallVersionAsync(gameDir, andromedaVersion,
-            (progress, status) => Dispatcher.UIThread.Post(() => OnInstallProgress(0.5 + progress * 0.5, status)));
+        double baseProgress = mlAlreadyInstalled ? 0.0 : 0.5;
+        double progressScale = mlAlreadyInstalled ? 1.0 : 0.5;
 
-        Dispatcher.UIThread.Post(() => OnOperationFinished(andromedaError));
+        Dispatcher.UIThread.Post(() => OnInstallProgress(baseProgress, $"Installing Andromeda {andromedaVersion}"));
+        string? andromedaError = await AndromedaManager.InstallVersionAsync(gameDir, andromedaVersion,
+            (progress, status) => Dispatcher.UIThread.Post(() => OnInstallProgress(baseProgress + (progress * progressScale), status)));
+
+        Dispatcher.UIThread.Post(() => OnOperationFinished(andromedaError, andromedaOnly: true));
     }
 
     private void InstallModloaderHandler(object sender, RoutedEventArgs args)
@@ -459,6 +487,7 @@ public partial class DetailsView : UserControl
             DialogBox.ShowNotice("SUCCESS!", "Andromeda is now up to date.");
             _ = RefreshAndromedaStatusAsync();
             LoadMelonLoaderOptions();
+            SaveOptionsHandler(this, null);
             return;
         }
 
@@ -495,6 +524,7 @@ public partial class DetailsView : UserControl
         DialogBox.ShowNotice("SUCCESS!", $"Successfully {operationType}{((!Model.Game.MLInstalled || isInstall) ? string.Empty : " to")}\nAndromeda v{(Model.Game.MLInstalled ? Model.Game.MLVersion : currentMLVersion)}");
         _ = RefreshAndromedaStatusAsync();
         LoadMelonLoaderOptions();
+        SaveOptionsHandler(this, null);
     }
 
     private void OpenDirHandler(object sender, RoutedEventArgs args)
