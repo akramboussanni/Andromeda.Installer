@@ -714,7 +714,7 @@ internal static class AndromedaManager
         }
 
         string content = File.ReadAllText(filePath);
-        var sectionRegex = new Regex($@"(?ms)^\[{Regex.Escape(section)}\]\s*(.*?)(?=^\[|\z)");
+        var sectionRegex = new Regex($@"(?ims)^\[{Regex.Escape(section)}\]\s*(.*?)(?=^\[|\z)");
         var sectionMatch = sectionRegex.Match(content);
         if (!sectionMatch.Success)
         {
@@ -769,7 +769,8 @@ internal static class AndromedaManager
         }
 
         string content = File.ReadAllText(filePath);
-        var sectionRegex = new Regex($@"(?ms)^\[{Regex.Escape(section)}\]\s*(.*?)(?=^\[|\z)");
+        // Added 'i' flag for case-insensitivity to avoid duplicating [Console] and [console] headers
+        var sectionRegex = new Regex($@"(?ims)^\[{Regex.Escape(section)}\]\s*(.*?)(?=^\[|\z)");
         var keyRegex = new Regex($@"(?im)^\s*{Regex.Escape(key)}\s*=.*$");
 
         if (sectionRegex.IsMatch(content))
