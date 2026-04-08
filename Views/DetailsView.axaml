@@ -117,12 +117,14 @@
                         <CheckBox IsChecked="{Binding ShowConsoleWindow}" IsEnabled="{Binding EnableSettings}">
                             Show console window
                         </CheckBox>
-                        <Button HorizontalAlignment="Left" Width="150" Click="SaveOptionsHandler" IsEnabled="{Binding EnableSettings}">
-                            Save Options
-                        </Button>
-                        <Button HorizontalAlignment="Left" Width="220" Click="UploadAndromedaDllHandler" IsEnabled="{Binding EnableSettings}">
-                            Upload Andromeda DLL
-                        </Button>
+                        <Grid HorizontalAlignment="Left" ColumnDefinitions="Auto,Auto" ColumnSpacing="10">
+                            <Button Grid.Column="0" Width="150" Click="SaveOptionsHandler" IsEnabled="{Binding EnableSettings}">
+                                Save Options
+                            </Button>
+                            <Button Grid.Column="1" Width="220" Click="UploadAndromedaDllHandler" IsEnabled="{Binding EnableSettings}" Background="#2A7A4D">
+                                Upload Andromeda DLL
+                            </Button>
+                        </Grid>
                         <TextBlock Foreground="#AFFF" Text="{Binding OptionsStatusText}" TextWrapping="Wrap" />
                     </StackPanel>
                 </TabItem>
