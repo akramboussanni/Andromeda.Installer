@@ -689,10 +689,12 @@ public partial class DetailsView : UserControl
             return;
         }
 
+        string gameDir = Model.Game.Dir;
+
         Model.Installing = true;
         Model.OptionsStatusText = "Installing Andromeda DLL...";
 
-        string? error = await Task.Run(() => AndromedaManager.InstallFromDll(Model.Game.Dir, dllPath));
+        string? error = await Task.Run(() => AndromedaManager.InstallFromDll(gameDir, dllPath));
 
         Model.Installing = false;
         if (error != null)
