@@ -178,6 +178,28 @@ public partial class DetailsView : UserControl
         Model.OptionsStatusText = "Saved MelonLoader settings.";
     }
 
+    private bool SaveOptionsFromModel()
+    {
+        if (Model == null)
+            return false;
+
+        var error = AndromedaManager.SaveMelonLoaderOptions(Model.Game.Dir, new MelonLoaderOptions
+        {
+            Enabled = Model.AndromedaEnabled,
+            ShowConsole = Model.ShowConsoleWindow
+        });
+
+        if (error != null)
+        {
+            Model.OptionsStatusText = error;
+            DialogBox.ShowError(error);
+            return false;
+        }
+
+        Model.OptionsStatusText = "Saved MelonLoader settings.";
+        return true;
+    }
+
     public void UpdateVersionList()
     {
         if (Model == null)
@@ -315,6 +337,9 @@ public partial class DetailsView : UserControl
             return;
         }
 
+        if (!SaveOptionsFromModel())
+            return;
+
         if (AskForElevation())
             return;
 
@@ -399,6 +424,9 @@ public partial class DetailsView : UserControl
             MainWindow.Instance.ShowMainView();
             return;
         }
+
+        if (!SaveOptionsFromModel())
+            return;
 
         if (AskForElevation())
             return;
@@ -486,8 +514,8 @@ public partial class DetailsView : UserControl
         {
             DialogBox.ShowNotice("SUCCESS!", "Andromeda is now up to date.");
             _ = RefreshAndromedaStatusAsync();
+            SaveOptionsFromModel();
             LoadMelonLoaderOptions();
-            SaveOptionsHandler(this, null);
             return;
         }
 
@@ -523,8 +551,8 @@ public partial class DetailsView : UserControl
 
         DialogBox.ShowNotice("SUCCESS!", $"Successfully {operationType}{((!Model.Game.MLInstalled || isInstall) ? string.Empty : " to")}\nAndromeda v{(Model.Game.MLInstalled ? Model.Game.MLVersion : currentMLVersion)}");
         _ = RefreshAndromedaStatusAsync();
+        SaveOptionsFromModel();
         LoadMelonLoaderOptions();
-        SaveOptionsHandler(this, null);
     }
 
     private void OpenDirHandler(object sender, RoutedEventArgs args)
@@ -624,6 +652,59 @@ public partial class DetailsView : UserControl
                 OnOperationFinished(errorMessage, true);
                 UpdateVersionList();
             })));
+    }
+
+    private async void UploadAndromedaDllHandler(object? sender, RoutedEventArgs args)
+    {
+        if (Model == null || !Model.Game.Validate(out _))
+        {
+            MainWindow.Instance.ShowMainView();
+            return;
+        }
+
+        if (AskForElevation())
+            return;
+
+        var topLevel = TopLevel.GetTopLevel(this)!;
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new()
+        {
+            Title = "Select an Andromeda DLL...",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new("DLL File")
+                {
+                    Patterns = [ "*.dll" ]
+                }
+            ]
+        });
+
+        if (files.Count is 0 or > 1)
+            return;
+
+        string dllPath = files[0].Path.LocalPath;
+        if (string.IsNullOrWhiteSpace(dllPath))
+        {
+            DialogBox.ShowError("Invalid DLL path selected.");
+            return;
+        }
+
+        Model.Installing = true;
+        Model.OptionsStatusText = "Installing Andromeda DLL...";
+
+        string? error = await Task.Run(() => AndromedaManager.InstallFromDll(Model.Game.Dir, dllPath));
+
+        Model.Installing = false;
+        if (error != null)
+        {
+            Model.OptionsStatusText = error;
+            DialogBox.ShowError(error);
+            return;
+        }
+
+        Model.OptionsStatusText = $"Installed Andromeda DLL: {Path.GetFileName(dllPath)}";
+        await RefreshAndromedaStatusAsync();
+        UpdateVersionInfo();
     }
 
     private void ShowLinuxInstructionsHandler(object sender, TappedEventArgs args)

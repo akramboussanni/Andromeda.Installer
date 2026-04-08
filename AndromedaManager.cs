@@ -27,6 +27,9 @@ internal static class AndromedaManager
     public static List<AndromedaVersion> Versions { get; } = [];
 
     private static bool _bleedingEdgeEnabled;
+    private static bool? _preferredMelonLoaderEnabled;
+    private static bool? _preferredMelonLoaderShowConsole;
+
     public static bool BleedingEdgeEnabled
     {
         get => _bleedingEdgeEnabled;
@@ -138,6 +141,18 @@ internal static class AndromedaManager
             string json = File.ReadAllText(Config.AndromedaSettingsPath);
             var node = JsonNode.Parse(json);
             _bleedingEdgeEnabled = node?["bleedingEdge"]?.GetValue<bool>() ?? false;
+
+            var savedEnabled = node?["melonLoaderEnabled"]?.GetValue<bool?>();
+            if (savedEnabled.HasValue)
+            {
+                _preferredMelonLoaderEnabled = savedEnabled.Value;
+            }
+
+            var savedShowConsole = node?["melonLoaderShowConsole"]?.GetValue<bool?>();
+            if (savedShowConsole.HasValue)
+            {
+                _preferredMelonLoaderShowConsole = savedShowConsole.Value;
+            }
         }
         catch { /* defaults */ }
     }
@@ -148,7 +163,12 @@ internal static class AndromedaManager
         {
             string? dir = Path.GetDirectoryName(Config.AndromedaSettingsPath);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-            var obj = new { bleedingEdge = _bleedingEdgeEnabled };
+            var obj = new
+            {
+                bleedingEdge = _bleedingEdgeEnabled,
+                melonLoaderEnabled = _preferredMelonLoaderEnabled,
+                melonLoaderShowConsole = _preferredMelonLoaderShowConsole
+            };
             File.WriteAllText(Config.AndromedaSettingsPath, JsonSerializer.Serialize(obj));
         }
         catch { }
@@ -252,8 +272,6 @@ internal static class AndromedaManager
                 return $"Unsupported Andromeda artifact format '{ext}'.";
             }
 
-            onProgress?.Invoke(0.8, "Applying MelonLoader console settings");
-            ApplyConsoleHide(gameDir);
             onProgress?.Invoke(1.0, "Andromeda installation complete");
 
             return null;
@@ -343,8 +361,6 @@ internal static class AndromedaManager
                 return $"Unsupported Andromeda artifact format '{ext}'.";
             }
 
-            onProgress?.Invoke(0.8, "Applying MelonLoader console settings");
-            ApplyConsoleHide(gameDir);
             onProgress?.Invoke(1.0, "Andromeda installation complete");
 
             return null;
@@ -424,7 +440,7 @@ internal static class AndromedaManager
         bool? enabled = null;
         bool? showConsole = null;
 
-        foreach (var target in GetLoaderConfigTargets(gameDir))
+        foreach (var target in GetLoaderConfigReadTargets(gameDir))
         {
             if (enabled == null)
             {
@@ -437,7 +453,7 @@ internal static class AndromedaManager
 
             if (showConsole == null)
             {
-                var rawHide = GetIniValue(target.filePath, "console", "hide_console") 
+                var rawHide = GetIniValue(target.filePath, "console", "hide_console")
                            ?? GetIniValue(target.filePath, "General", "HideConsole");
                 if (TryParseBool(rawHide, out var parsedHide))
                 {
@@ -453,8 +469,8 @@ internal static class AndromedaManager
 
         return new MelonLoaderOptions
         {
-            Enabled = enabled ?? true,
-            ShowConsole = showConsole ?? false
+            Enabled = enabled ?? _preferredMelonLoaderEnabled ?? true,
+            ShowConsole = showConsole ?? _preferredMelonLoaderShowConsole ?? false
         };
     }
 
@@ -462,16 +478,16 @@ internal static class AndromedaManager
     {
         try
         {
-            foreach (var target in GetLoaderConfigTargets(gameDir))
+            foreach (var target in GetLoaderConfigWriteTargets(gameDir))
             {
-                // Old keys (v0.5)
-                SetIniValue(target.filePath, "Console", "Enabled", options.ShowConsole ? "true" : "false");
-                SetIniValue(target.filePath, "General", "HideConsole", !options.ShowConsole ? "true" : "false");
-                
-                // New keys (v0.6+)
+                // Canonical Loader.cfg keys (MelonLoader 0.6+)
                 SetIniValue(target.filePath, "console", "hide_console", !options.ShowConsole ? "true" : "false");
                 SetIniValue(target.filePath, "loader", "disable", !options.Enabled ? "true" : "false");
             }
+
+            _preferredMelonLoaderEnabled = options.Enabled;
+            _preferredMelonLoaderShowConsole = options.ShowConsole;
+            SaveSettings();
 
             return null;
         }
@@ -507,6 +523,45 @@ internal static class AndromedaManager
         catch (Exception ex)
         {
             return "Failed to uninstall Andromeda: " + ex.Message;
+        }
+    }
+
+    public static string? InstallFromDll(string gameDir, string dllPath)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(dllPath) || !File.Exists(dllPath))
+            {
+                return "Selected DLL file does not exist.";
+            }
+
+            if (!string.Equals(Path.GetExtension(dllPath), ".dll", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Selected file is not a DLL.";
+            }
+
+            string modsDir = Path.Combine(gameDir, "Mods");
+            Directory.CreateDirectory(modsDir);
+
+            // Replace previous Andromeda/Parasite builds so manual updates are deterministic.
+            foreach (var file in Directory.EnumerateFiles(modsDir, "*.dll", SearchOption.TopDirectoryOnly))
+            {
+                string fileName = Path.GetFileName(file);
+                if (!Regex.IsMatch(fileName, "(?i)(andromeda|parasite)"))
+                {
+                    continue;
+                }
+
+                File.Delete(file);
+            }
+
+            string targetPath = Path.Combine(modsDir, Path.GetFileName(dllPath));
+            File.Copy(dllPath, targetPath, true);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return "Failed to install Andromeda DLL: " + ex.Message;
         }
     }
 
@@ -646,15 +701,6 @@ internal static class AndromedaManager
         }
     }
 
-    private static void ApplyConsoleHide(string gameDir)
-    {
-        _ = SaveMelonLoaderOptions(gameDir, new MelonLoaderOptions
-        {
-            Enabled = true,
-            ShowConsole = false
-        });
-    }
-
     private static void CleanupLegacyMods(string modsDir)
     {
         foreach (var file in Directory.EnumerateFiles(modsDir, "*.dll", SearchOption.TopDirectoryOnly))
@@ -696,7 +742,7 @@ internal static class AndromedaManager
         return braceIndent + "\t";
     }
 
-    private static (string filePath, string displayName)[] GetLoaderConfigTargets(string gameDir)
+    private static (string filePath, string displayName)[] GetLoaderConfigReadTargets(string gameDir)
     {
         return
         [
@@ -704,6 +750,25 @@ internal static class AndromedaManager
             (Path.Combine(gameDir, "UserData", "Loader.cfg"), "UserData/Loader.cfg"),
             (Path.Combine(gameDir, "UserData", "MelonPreferences.cfg"), "UserData/MelonPreferences.cfg")
         ];
+    }
+
+    private static (string filePath, string displayName)[] GetLoaderConfigWriteTargets(string gameDir)
+    {
+        string userDataLoader = Path.Combine(gameDir, "UserData", "Loader.cfg");
+        string melonLoaderLoader = Path.Combine(gameDir, "MelonLoader", "Loader.cfg");
+
+        if (File.Exists(userDataLoader))
+        {
+            return [(userDataLoader, "UserData/Loader.cfg")];
+        }
+
+        if (File.Exists(melonLoaderLoader))
+        {
+            return [(melonLoaderLoader, "MelonLoader/Loader.cfg")];
+        }
+
+        // Default to UserData/Loader.cfg when no loader config exists yet.
+        return [(userDataLoader, "UserData/Loader.cfg")];
     }
 
     private static string? GetIniValue(string filePath, string section, string key)

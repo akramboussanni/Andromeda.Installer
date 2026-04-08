@@ -120,6 +120,9 @@
                         <Button HorizontalAlignment="Left" Width="150" Click="SaveOptionsHandler" IsEnabled="{Binding EnableSettings}">
                             Save Options
                         </Button>
+                        <Button HorizontalAlignment="Left" Width="220" Click="UploadAndromedaDllHandler" IsEnabled="{Binding EnableSettings}">
+                            Upload Andromeda DLL
+                        </Button>
                         <TextBlock Foreground="#AFFF" Text="{Binding OptionsStatusText}" TextWrapping="Wrap" />
                     </StackPanel>
                 </TabItem>
