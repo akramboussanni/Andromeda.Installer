@@ -1,7 +1,16 @@
 ![Andromeda banner](Assets/banner.png)
 
-Andromeda Installer installs MelonLoader, installs Andromeda into the game Mods folder, and applies the loader configuration needed for a clean launch experience.
+# Andromeda.Installer
 
-The installer downloads the mod from the latest release in the Andromeda.Mod repository, so updating the mod release updates what the installer pulls automatically.
+Andromeda.Installer is the player-friendly setup path for **Enemy On Board** with Andromeda. Forked from MelonLoader<s installer
 
-Discord: https://discord.gg/fMbrCUKHP8
+## What It Does
+
+- Installs MelonLoader.
+- Installs Andromeda into the game `Mods` folder.
+- Applies loader configs.
+- Pulls the latest `Andromeda.Mod` release automatically.
+
+## Community
+
+[Join Discord](https://discord.gg/fMbrCUKHP8) for install help, troubleshooting, and announcements.
