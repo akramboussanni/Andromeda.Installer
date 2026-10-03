@@ -43,3 +43,4 @@ jobs:
             compiled_release/Andromeda.Installer.exe
             compiled_release/Andromeda.Installer.Linux
             compiled_release/Andromeda.Installer.MacOS.zip
+            compiled_release/Andromeda.Installer.MacOS.dmg

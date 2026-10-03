@@ -92,6 +92,26 @@ jobs:
             "Output/osx-universal/Andromeda Installer.app" \
             "Output/Andromeda.Installer.MacOS.zip"
 
+      - name: Build, sign and notarize drag-to-Applications disk image
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/dmg-tools"
+          "$RUNNER_TEMP/dmg-tools/bin/pip" install 'dmgbuild==1.6.7'
+          "$RUNNER_TEMP/dmg-tools/bin/dmgbuild" -s packaging/dmg-settings.py \
+            -D app="Output/osx-universal/Andromeda Installer.app" \
+            "Andromeda Installer" "Output/Andromeda.Installer.MacOS.dmg"
+          IDENTITY=$(security find-identity -v -p codesigning "$RUNNER_TEMP/andromeda-signing.keychain-db" | awk '/Developer ID Application/ {print $2; exit}')
+          test -n "$IDENTITY"
+          codesign --force --timestamp --sign "$IDENTITY" "Output/Andromeda.Installer.MacOS.dmg"
+          xcrun notarytool submit "Output/Andromeda.Installer.MacOS.dmg" --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait --timeout 20m
+          xcrun stapler staple "Output/Andromeda.Installer.MacOS.dmg"
+          xcrun stapler validate "Output/Andromeda.Installer.MacOS.dmg"
+          codesign --verify --strict "Output/Andromeda.Installer.MacOS.dmg"
+
       - name: Remove temporary signing credentials
         if: always()
         run: |
@@ -102,4 +122,6 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: MelonLoader.Installer.MacOS
-          path: Output/Andromeda.Installer.MacOS.zip
+          path: |
+            Output/Andromeda.Installer.MacOS.zip
+            Output/Andromeda.Installer.MacOS.dmg
