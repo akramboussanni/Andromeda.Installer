@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir -p "Output/osx-universal/Andromeda Installer.app/Contents/Resources"
           cp Info.plist "Output/osx-universal/Andromeda Installer.app/Contents/"
-          cp Resources/icon.icns "Output/osx-universal/Andromeda Installer.app/Contents/Resources/"
+          cp icon.icns "Output/osx-universal/Andromeda Installer.app/Contents/Resources/"
 
       - name: Sign and package app bundle
         run: |
