@@ -4,6 +4,17 @@ on:
       VERSION:
         required: true
         type: string
+    secrets:
+      MACOS_CERTIFICATE_P12:
+        required: true
+      MACOS_CERTIFICATE_PASSWORD:
+        required: true
+      APPLE_ID:
+        required: true
+      APPLE_APP_PASSWORD:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
 
 jobs:
   compile_macos:
@@ -29,7 +40,6 @@ jobs:
       - name: Create Universal Binary using lipo
         run: |
           mkdir -p "Output/osx-universal/Andromeda Installer.app/Contents/MacOS"
-          cp -R Output/osx-arm64/. "Output/osx-universal/Andromeda Installer.app/Contents/MacOS/"
           lipo -create \
             Output/osx-x64/Andromeda.Installer.MacOS \
             Output/osx-arm64/Andromeda.Installer.MacOS \
@@ -41,12 +51,52 @@ jobs:
           cp Info.plist "Output/osx-universal/Andromeda Installer.app/Contents/"
           cp icon.icns "Output/osx-universal/Andromeda Installer.app/Contents/Resources/"
 
-      - name: Sign and package app bundle
+      - name: Import signing certificate
+        env:
+          CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
         run: |
-          codesign --force --deep --sign - "Output/osx-universal/Andromeda Installer.app"
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/andromeda-signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 32)
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          printf '%s' "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/signing.p12" -k "$KEYCHAIN" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+
+      - name: Sign, notarize and package app bundle
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          RELEASE_VERSION: ${{ inputs.VERSION }}
+        run: |
+          set -euo pipefail
+          APP="Output/osx-universal/Andromeda Installer.app"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${RELEASE_VERSION#v}" "$APP/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${RELEASE_VERSION#v}" "$APP/Contents/Info.plist"
+          IDENTITY=$(security find-identity -v -p codesigning "$RUNNER_TEMP/andromeda-signing.keychain-db" | awk '/Developer ID Application/ {print $2; exit}')
+          test -n "$IDENTITY"
+          codesign --force --options runtime --timestamp --entitlements entitlements.macos.plist --sign "$IDENTITY" "$APP"
+          codesign --verify --deep --strict "$APP"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "$RUNNER_TEMP/notarization.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarization.zip" --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait --timeout 20m
+          xcrun stapler staple "$APP"
+          xcrun stapler validate "$APP"
+          syspolicy_check distribution "$APP"
           ditto -c -k --sequesterRsrc --keepParent \
             "Output/osx-universal/Andromeda Installer.app" \
             "Output/Andromeda.Installer.MacOS.zip"
+
+      - name: Remove temporary signing credentials
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/andromeda-signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/signing.p12"
 
       - name: Upload Release
         uses: actions/upload-artifact@v5

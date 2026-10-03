@@ -21,5 +21,6 @@ jobs:
   compile_macos:
     name: macOS Universal
     uses: ./.github/workflows/compile_macos.yml
+    secrets: inherit
     with:
       VERSION: ${{ inputs.VERSION }}
