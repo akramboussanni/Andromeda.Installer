@@ -34,10 +34,6 @@ jobs:
             Output/osx-x64/Andromeda.Installer.MacOS \
             Output/osx-arm64/Andromeda.Installer.MacOS \
             -output "Output/osx-universal/Andromeda Installer.app/Contents/MacOS/Andromeda.Installer.MacOS"
-          for library in libAvaloniaNative.dylib libHarfBuzzSharp.dylib libSkiaSharp.dylib; do
-            lipo -create "Output/osx-x64/$library" "Output/osx-arm64/$library" \
-              -output "Output/osx-universal/Andromeda Installer.app/Contents/MacOS/$library"
-          done
         
       - name: Copy App Bundle Resources
         run: |
