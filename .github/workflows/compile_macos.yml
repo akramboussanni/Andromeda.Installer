@@ -29,10 +29,11 @@ jobs:
       - name: Create Universal Binary using lipo
         run: |
           mkdir -p "Output/osx-universal/Andromeda Installer.app/Contents/MacOS"
+          cp -R Output/osx-arm64/. "Output/osx-universal/Andromeda Installer.app/Contents/MacOS/"
           lipo -create \
-            Output/osx-x64/MelonLoader.Installer.MacOS \
-            Output/osx-arm64/MelonLoader.Installer.MacOS \
-            -output "Output/osx-universal/Andromeda Installer.app/Contents/MacOS/MelonLoader.Installer.MacOS"
+            Output/osx-x64/Andromeda.Installer.MacOS \
+            Output/osx-arm64/Andromeda.Installer.MacOS \
+            -output "Output/osx-universal/Andromeda Installer.app/Contents/MacOS/Andromeda.Installer.MacOS"
           for library in libAvaloniaNative.dylib libHarfBuzzSharp.dylib libSkiaSharp.dylib; do
             lipo -create "Output/osx-x64/$library" "Output/osx-arm64/$library" \
               -output "Output/osx-universal/Andromeda Installer.app/Contents/MacOS/$library"
