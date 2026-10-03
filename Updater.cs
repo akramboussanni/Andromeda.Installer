@@ -157,8 +157,8 @@ public static partial class Updater
             File.Delete(archivePath);
 
         // Find New File
-        newPath = Path.Combine(tempFolderPath, "MelonLoader Installer.app");
-        if (!File.Exists(newPath))
+        newPath = Path.Combine(tempFolderPath, "Andromeda Installer.app");
+        if (!Directory.Exists(newPath))
         {
             if (Directory.Exists(tempFolderPath))
                 Directory.Delete(tempFolderPath, true);

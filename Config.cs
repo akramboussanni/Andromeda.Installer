@@ -8,7 +8,7 @@ internal static class Config
     public static Uri Twitter { get; private set; } = new("https://x.com/lava_gang");
     public static string MelonLoaderReleasesApi { get; private set; } = "https://api.github.com/repos/LavaGang/MelonLoader/releases";
     public static string MelonLoaderBuildWorkflowApi { get; private set; } = "https://api.github.com/repos/LavaGang/MelonLoader/actions/workflows/5411546/runs?branch=alpha-development&event=push&status=success&per_page=5";
-    public static string InstallerLatestReleaseApi { get; private set; } = "https://api.github.com/repos/LavaGang/Andromeda.Installer/releases/latest";
+    public static string InstallerLatestReleaseApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda.Installer/releases/latest";
     public static string AndromedaReleaseLatestApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda/releases/latest";
     public static string AndromedaReleasesApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda/releases";
     public static string AndromedaModReleaseLatestApi { get; private set; } = "https://api.github.com/repos/akramboussanni/Andromeda.Mod/releases/latest";

@@ -27,6 +27,12 @@ jobs:
           name: MelonLoader.Installer.Linux
           path: ./compiled_release
 
+      - name: Download macOS universal Artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: MelonLoader.Installer.MacOS
+          path: ./compiled_release
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -36,3 +42,4 @@ jobs:
           files: |
             compiled_release/Andromeda.Installer.exe
             compiled_release/Andromeda.Installer.Linux
+            compiled_release/Andromeda.Installer.MacOS.zip
